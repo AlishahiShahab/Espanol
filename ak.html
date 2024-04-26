@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تبدیل متن به گفتار</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+    .container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    textarea {
+        width: 100%;
+        height: 150px;
+        margin-bottom: 10px;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    progress {
+        width: 100%;
+        height: 20px;
+        margin-top: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    input[type="range"] {
+        width: 100%;
+        margin-top: 10px;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <textarea id="text-input" placeholder="متن خود را اینجا وارد کنید..."></textarea>
+    <input type="range" id="speed-slider" min="0.1" max="10" step="0.1" value="1">
+    <select id="voice-select">
+        <!-- گزینه‌های گوینده با لهجه اسپانیایی اضافه می‌شوند -->
+    </select>
+    <button id="speak-button">تبدیل به گفتار</button>
+    <progress id="speech-progress" value="0" max="100"></progress>
+    <div id="translation-output" style="margin-top: 10px; display: none;">
+        <p><strong>Translation (انگلیسی):</strong></p>
+        <p id="translation-text"></p>
+    </div>
+</div>
+
+<script>
+    const speakButton = document.getElementById('speak-button');
+    const textInput = document.getElementById('text-input');
+    const speechProgress = document.getElementById('speech-progress');
+    const speedSlider = document.getElementById('speed-slider');
+    const voiceSelect = document.getElementById('voice-select');
+    const translationOutput = document.getElementById('translation-output');
+    const translationText = document.getElementById('translation-text');
+
+    speakButton.addEventListener('click', () => {
+        const text = textInput.value.trim();
+        if (text !== '') {
+            // تنظیم مقدار پیشرفت به 0 و پخش گفتار
+            speechProgress.value = 0;
+            speakText(text);
+        } else {
+            alert('لطفاً متنی را وارد کنید.');
+        }
+    });
+
+    function speakText(text) {
+        const selectedOption = voiceSelect.selectedOptions[0];
+        const voiceName = selectedOption.getAttribute('data-voice-name');
+        const voiceLang = selectedOption.getAttribute('data-voice-lang');
+        const voiceUri = selectedOption.getAttribute('data-voice-uri');
+
+        const speechSynthesis = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.voice = speechSynthesis.getVoices().find(voice => voice.name === voiceName && voice.lang === voiceLang && voice.voiceURI === voiceUri);
+        utterance.rate = speedSlider.value;
+
+        speechSynthesis.speak(utterance);
+
+        // نمایش پیشرفت پخش گفتار
+        utterance.onstart = () => {
+            console.log('پخش آغاز شد.');
+        };
+        utterance.onend = () => {
+            console.log('پخش پایان یافت.');
+            speechProgress.value = 100;
+            // نمایش ترجمه
+            showTranslation(text);
+        };
+        utterance.onboundary = (event) => {
+            const progress = (event.charIndex / text.length) * 100;
+            speechProgress.value = progress;
+        };
+    }
+
+    function loadVoices() {
+        const speechSynthesis = window.speechSynthesis;
+        const voices = speechSynthesis.getVoices();
+
+        voices.forEach(voice => {
+            if (voice.lang.startsWith('es')) {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.setAttribute('data-voice-uri', voice.voiceURI);
+                option.setAttribute('data-voice-name', voice.name);
+                option.setAttribute('data-voice-lang', voice.lang);
+                voiceSelect.appendChild(option);
+            }
+        });
+    }
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    // تابع برای ترجمه متن به انگلیسی
+    function translateText(text) {
+        // در اینجا یک وب سرویس ترجمه می‌تواند استفاده شود
+        // برای مثال، می‌توانید از Google Translate API استفاده کنید
+        // اینجا یک نمونه ساده از ترجمه را نشان می‌دهم
+        // شما باید یک وب سرویس معتبر و قابل اعتماد برای ترجمه استفاده کنید
+        // در این مثال، ما یک ترجمه دستی از اسپانیایی به انگلیسی انجام می‌دهیم
+        const translation = translateManually(text);
+        return translation;
+    }
+
+    // تابع برای ترجمه دستی متن از اسپانیایی به انگلیسی
+    function translateManually(text) {
+        // اینجا یک ترجمه دستی انجام می‌دهیم
+        // شما می‌توانید از روش‌های دیگری مانند وب سرویس‌های ترجمه استفاده کنید
+        // این یک نمونه ساده است و باید به روش مناسب برای ترجمه تغییر کند
+        const translationMap = {
+            'Hola, ¿cómo estás?': 'Hello, how are you?',
+            // اینجا متن‌های بیشتر را اضافه کنید
+        };
+        return translationMap[text] || 'Translation not available.';
+    }
+
+    // تابع برای نمایش ترجمه
+    function showTranslation(text) {
+        const translation = translateText(text);
+        translationText.textContent = translation;
+        translationOutput.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
